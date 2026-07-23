@@ -1,35 +1,30 @@
+name: car-auction
+
 services:
-
-  web:
-    build: .
-    ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - rabbitmq
-      - db-nosql
-
-  db:
+  postgres:
     image: postgres:16
     environment:
       POSTGRES_DB: car_auction
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   rabbitmq:
     image: rabbitmq:3-management
-  
-  db-nosql:
+    ports:
+      - "5672:5672"      # AMQP
+      - "15672:15672"    # UI: http://localhost:15672 (guest/guest)
+
+  mongodb:
     image: mongo:6
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: secret
+    ports:
+      - "27017:27017"
     volumes:
       - mongo_data:/data/db
 

@@ -1,4 +1,8 @@
 1 - Создать и запустить все сервисы
 docker compose up -d
 
-2 - 
+2 - Запуск сервера
+uvicorn app.main:app --reload --app-dir backend/gateway
+
+3 - 
+
