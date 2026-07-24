@@ -6,8 +6,9 @@ from pydantic import BaseModel, Field
 
 class VehicleStatus(str, Enum):
     CREATED = "created"
-    SENT_TO_ML = "sent_to_ml"
-    ML_PROCESSING = "ml_processing"
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
 
 
 class VehicleCreate(BaseModel):
