@@ -15,3 +15,6 @@ python -m backend.market_price.app.main
 
 6 - Orchestrator
 python -m backend.orchestrator.app.main
+
+7 - Auction platform
+python -m backend.auction_platform.app.main

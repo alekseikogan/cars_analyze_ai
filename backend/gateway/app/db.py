@@ -34,5 +34,6 @@ def get_db() -> Generator[Session, None, None]:
 def init_db() -> None:
     # Import models so they register on Base.metadata
     from backend.gateway.app import models  # noqa: F401
+    from backend.auction_platform.app import models as auction_models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)

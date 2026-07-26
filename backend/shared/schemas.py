@@ -11,6 +11,13 @@ class VehicleStatus(str, Enum):
     FAILED = "failed"
 
 
+class AuctionListingStatus(str, Enum):
+    READY_FOR_SALE = "ready_for_sale"
+    LISTED = "listed"
+    SOLD = "sold"
+    CANCELLED = "cancelled"
+
+
 class VehicleCreate(BaseModel):
     brand: str
     model: str
