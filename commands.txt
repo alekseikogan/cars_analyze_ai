@@ -4,5 +4,8 @@ docker compose -f infra/docker-compose.yml up -d
 2 - Запуск Gateway
 uvicorn backend.gateway.app.main:app --reload
 
-3 - Запуск Orchestrator (отдельный терминал)
+3 - Запуск Enrichment (OpenAI)
+uvicorn backend.enrichment.app.main:app --reload --port 8002
+
+4 - Запуск Orchestrator (отдельный терминал)
 python -m backend.orchestrator.app.main

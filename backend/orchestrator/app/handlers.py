@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import logging
+import os
+
+import httpx
 
 from backend.gateway.app.db import SessionLocal
 from backend.gateway.app.models import Vehicle
 from backend.shared.events import VehicleCreatedEvent
-from backend.shared.schemas import VehicleStatus
+from backend.shared.schemas import EnrichmentResult, VehicleStatus
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +25,29 @@ def _set_status(vehicle_id: int, status: VehicleStatus) -> None:
         db.close()
 
 
-def _run_enrichment(event: VehicleCreatedEvent) -> None:
-    # TODO: HTTP/call to backend.enrichment
-    logger.info("enrichment: vehicle_id=%s brand=%s model=%s", event.vehicle_id, event.brand, event.model)
+def _run_enrichment(event: VehicleCreatedEvent) -> EnrichmentResult:
+    base_url = os.getenv("ENRICHMENT_URL", "http://127.0.0.1:8002").rstrip("/")
+    payload = {
+        "vehicle_id": event.vehicle_id,
+        "brand": event.brand,
+        "model": event.model,
+        "year": event.year,
+        "mileage": event.mileage,
+        "color": event.color,
+        "body_type": event.body_type,
+    }
+    logger.info("enrichment: calling %s/enrich vehicle_id=%s", base_url, event.vehicle_id)
+    with httpx.Client(timeout=60.0) as client:
+        response = client.post(f"{base_url}/enrich", json=payload)
+        response.raise_for_status()
+    result = EnrichmentResult.model_validate(response.json())
+    logger.info(
+        "enrichment done vehicle_id=%s segment=%s options=%s",
+        result.vehicle_id,
+        result.market_segment,
+        result.likely_options,
+    )
+    return result
 
 
 def _run_market_price(event: VehicleCreatedEvent) -> None:

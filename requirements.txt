@@ -20,5 +20,8 @@ pymongo>=4.10.0
 # RabbitMQ
 aio-pika>=9.4.0
 
+# OpenAI (enrichment)
+openai>=1.55.0
+
 # Utils
 python-dotenv>=1.0.1
