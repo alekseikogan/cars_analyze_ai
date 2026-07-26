@@ -1,12 +1,17 @@
 import os
 from collections.abc import Generator
+from pathlib import Path
 
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
+# Project root: cars_analyze_ai/.env
+load_dotenv(Path(__file__).resolve().parents[3] / ".env")
+
 DATABASE_URL = os.getenv(
     "POSTGRES_URL",
-    default=f"postgresql+psycopg2://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}",
+    "postgresql+psycopg2://admin:secret@localhost:5433/car_auction",
 )
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
