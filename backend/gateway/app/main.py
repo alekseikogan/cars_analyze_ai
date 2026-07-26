@@ -10,7 +10,12 @@ from backend.shared.schemas import VehicleCreate, VehicleRead
 from backend.gateway.app.db import get_db, init_db
 from backend.gateway.app.models import Vehicle
 from backend.gateway.app.publisher import publish_vehicle_created
-from backend.shared.events import VehicleCreatedEvent
+from backend.shared.events import (
+    VEHICLE_CREATED,
+    VEHICLE_CREATED_QUEUE,
+    VEHICLE_EXCHANGE,
+    VehicleCreatedEvent,
+)
 
 
 @asynccontextmanager
@@ -21,11 +26,11 @@ async def lifespan(app: FastAPI):
     connection = await aio_pika.connect_robust(os.getenv("RABBITMQ_URL"))
     channel = await connection.channel()
     exchange = await channel.declare_exchange(
-        name="vehicle",
+        name=VEHICLE_EXCHANGE,
         type=aio_pika.ExchangeType.TOPIC,
     )
-    queue = await channel.declare_queue(name="vehicle.created")
-    await queue.bind(exchange, routing_key="vehicle.created")
+    queue = await channel.declare_queue(name=VEHICLE_CREATED_QUEUE)
+    await queue.bind(exchange, routing_key=VEHICLE_CREATED)
 
     app.state.connection = connection
     app.state.channel = channel

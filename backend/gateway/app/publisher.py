@@ -1,7 +1,7 @@
 import aio_pika
 from fastapi import HTTPException, Request
 
-from backend.shared.events import VehicleCreatedEvent
+from backend.shared.events import VEHICLE_CREATED, VehicleCreatedEvent
 
 
 async def publish_vehicle_created(event: VehicleCreatedEvent, request: Request) -> None:
@@ -11,7 +11,7 @@ async def publish_vehicle_created(event: VehicleCreatedEvent, request: Request) 
             body=event.model_dump_json().encode("utf-8"),
             content_type="application/json",
         )
-        await exchange.publish(message, routing_key="vehicle.created")
+        await exchange.publish(message, routing_key=VEHICLE_CREATED)
     except Exception as e:
         raise HTTPException(
             status_code=500,

@@ -1,7 +1,8 @@
 1 - Создать и запустить все сервисы
-docker compose up -d
+docker compose -f infra/docker-compose.yml up -d
 
-2 - Запуск сервера
+2 - Запуск Gateway
 uvicorn backend.gateway.app.main:app --reload
 
-3 - docker compose -f infra/docker-compose.yml up -d
+3 - Запуск Orchestrator (отдельный терминал)
+python -m backend.orchestrator.app.main
