@@ -2,7 +2,7 @@
 docker compose up -d
 
 2 - Запуск сервера
-uvicorn app.main:app --reload --app-dir backend/gateway
+uvicorn backend.gateway.app.main:app --reload
 
 3 - 
 
