@@ -1,8 +1,13 @@
-from fastapi import FastAPI, Depends, Session
+from contextlib import asynccontextmanager
+
+
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+
 from backend.shared.schemas import VehicleCreate, VehicleRead
 from backend.gateway.app.db import get_db, init_db
 from backend.gateway.app.models import Vehicle
-from contextlib import asynccontextmanager
 
 
 @asynccontextmanager
@@ -37,7 +42,7 @@ def create_vehicle(vehicle: VehicleCreate, db: Session = Depends(get_db)):
 
 @app.get(
     "/vehicles",
-    response_model=list[VehicleCreate]
+    response_model=list[VehicleRead]
     )
 def get_vehicles(db: Session = Depends(get_db)):
     query = select(Vehicle)
