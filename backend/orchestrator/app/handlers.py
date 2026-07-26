@@ -8,7 +8,7 @@ import httpx
 from backend.gateway.app.db import SessionLocal
 from backend.gateway.app.models import Vehicle
 from backend.shared.events import VehicleCreatedEvent
-from backend.shared.schemas import EnrichmentResult, VehicleStatus
+from backend.shared.schemas import EnrichmentResult, PricePredictResult, VehicleStatus
 
 logger = logging.getLogger(__name__)
 
@@ -51,13 +51,33 @@ def _run_enrichment(event: VehicleCreatedEvent) -> EnrichmentResult:
 
 
 def _run_market_price(event: VehicleCreatedEvent) -> None:
-    # TODO: HTTP/call to backend.market-price
-    logger.info("market-price: vehicle_id=%s year=%s mileage=%s", event.vehicle_id, event.year, event.mileage)
+    # Reserved for a dedicated market-price consumer later
+    logger.info("market-price: skip for now vehicle_id=%s", event.vehicle_id)
 
 
-def _run_ml(event: VehicleCreatedEvent) -> None:
-    # TODO: HTTP/call to backend.ml-service
-    logger.info("ml-service: vehicle_id=%s body_type=%s", event.vehicle_id, event.body_type)
+def _run_ml(event: VehicleCreatedEvent) -> PricePredictResult:
+    base_url = os.getenv("ML_SERVICE_URL", "http://127.0.0.1:8001").rstrip("/")
+    payload = {
+        "vehicle_id": event.vehicle_id,
+        "brand": event.brand,
+        "model": event.model,
+        "year": event.year,
+        "mileage": event.mileage,
+        "color": event.color,
+        "body_type": event.body_type,
+    }
+    logger.info("ml-service: calling %s/predict vehicle_id=%s", base_url, event.vehicle_id)
+    with httpx.Client(timeout=30.0) as client:
+        response = client.post(f"{base_url}/predict", json=payload)
+        response.raise_for_status()
+    result = PricePredictResult.model_validate(response.json())
+    logger.info(
+        "ml-service done vehicle_id=%s price=%s confidence=%s",
+        result.vehicle_id,
+        result.predicted_price,
+        result.confidence,
+    )
+    return result
 
 
 def process_vehicle_created(event: VehicleCreatedEvent) -> None:

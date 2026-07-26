@@ -7,5 +7,8 @@ uvicorn backend.gateway.app.main:app --reload
 3 - Запуск Enrichment (OpenAI)
 uvicorn backend.enrichment.app.main:app --reload --port 8002
 
-4 - Запуск Orchestrator (отдельный терминал)
+4 - Запуск ML Service
+uvicorn backend.ml_service.app.main:app --reload --port 8001
+
+5 - Запуск Orchestrator (отдельный терминал)
 python -m backend.orchestrator.app.main

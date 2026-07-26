@@ -48,3 +48,24 @@ class EnrichmentResult(BaseModel):
     market_segment: str | None = None
     summary: str | None = None
     raw_model: str | None = None
+
+
+class PricePredictRequest(BaseModel):
+    vehicle_id: int
+    brand: str
+    model: str
+    year: int
+    mileage: int
+    color: str | None = None
+    body_type: str
+
+
+class PricePredictResult(BaseModel):
+    vehicle_id: int
+    predicted_price: float = Field(..., ge=0, description="Estimated price in EUR")
+    confidence: float = Field(
+        ...,
+        ge=0,
+        le=1,
+        description="How reliable the estimate is (0 = guess, 1 = very sure)",
+    )
