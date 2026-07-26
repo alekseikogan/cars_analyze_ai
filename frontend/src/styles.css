@@ -68,10 +68,26 @@ main {
   margin-top: 16px;
 }
 
+.page.evaluate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.page.evaluate .form,
+.page.evaluate .status-box {
+  width: 100%;
+  max-width: 480px;
+  text-align: left;
+}
+
 .form {
   display: grid;
   gap: 12px;
   max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .field {

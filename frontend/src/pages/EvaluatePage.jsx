@@ -117,7 +117,7 @@ export default function EvaluatePage() {
   }
 
   return (
-    <div className="page">
+    <div className="page evaluate">
       <h1>Оценка автомобиля</h1>
       <p className="muted">
         Заполните данные — отправим на enrichment и ML, потом появится ссылка на
