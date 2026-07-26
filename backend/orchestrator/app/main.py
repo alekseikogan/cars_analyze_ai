@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parents[3] / ".env")
 
 from backend.orchestrator.app.consumer import start_consumer  # noqa: E402
+from backend.orchestrator.app.mongo import close_mongo, connect_mongo  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,6 +23,7 @@ logger = logging.getLogger("orchestrator")
 
 async def main() -> None:
     logger.info("Orchestrator starting...")
+    await connect_mongo()
     connection = await start_consumer()
     logger.info(
         "Orchestrator running. Listening for vehicle.created and vehicle.price.completed..."
@@ -30,6 +32,7 @@ async def main() -> None:
         await asyncio.Future()
     finally:
         await connection.close()
+        await close_mongo()
         logger.info("Orchestrator stopped")
 
 

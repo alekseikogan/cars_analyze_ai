@@ -60,7 +60,7 @@ def _run_enrichment(event: VehicleCreatedEvent) -> EnrichmentResult:
 
 
 async def _try_finish(vehicle_id: int, exchange: AbstractExchange) -> None:
-    state = saga_store.get_or_create(vehicle_id)
+    state = await saga_store.get_or_create(vehicle_id)
     if not (state.enrichment_done and state.price_done):
         logger.info(
             "saga waiting vehicle_id=%s enrichment=%s price=%s",
@@ -80,7 +80,7 @@ async def _try_finish(vehicle_id: int, exchange: AbstractExchange) -> None:
             confidence=state.confidence,
         ),
     )
-    saga_store.clear(vehicle_id)
+    await saga_store.clear(vehicle_id)
     logger.info("orchestrator finished vehicle_id=%s status=ready", vehicle_id)
 
 
@@ -90,13 +90,14 @@ async def process_vehicle_created(
 ) -> None:
     """Start saga: enrichment (HTTP for now) + request market price via event."""
     logger.info("orchestrator received vehicle.created: %s", event.model_dump())
-    state = saga_store.get_or_create(event.vehicle_id)
+    state = await saga_store.get_or_create(event.vehicle_id)
 
     _set_status(event.vehicle_id, VehicleStatus.PROCESSING)
 
     try:
         _run_enrichment(event)
         state.enrichment_done = True
+        await saga_store.save(event.vehicle_id, state)
 
         price_request = VehiclePriceRequestedEvent(
             vehicle_id=event.vehicle_id,
@@ -115,7 +116,7 @@ async def process_vehicle_created(
             _set_status(event.vehicle_id, VehicleStatus.FAILED)
         except Exception:
             logger.exception("failed to mark vehicle_id=%s as failed", event.vehicle_id)
-        saga_store.clear(event.vehicle_id)
+        await saga_store.clear(event.vehicle_id)
         raise
 
 
@@ -129,8 +130,9 @@ async def process_price_completed(
         event.predicted_price,
         event.confidence,
     )
-    state = saga_store.get_or_create(event.vehicle_id)
+    state = await saga_store.get_or_create(event.vehicle_id)
     state.price_done = True
     state.predicted_price = event.predicted_price
     state.confidence = event.confidence
+    await saga_store.save(event.vehicle_id, state)
     await _try_finish(event.vehicle_id, exchange)
