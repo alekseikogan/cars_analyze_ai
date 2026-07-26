@@ -2,7 +2,8 @@ from contextlib import asynccontextmanager
 import aio_pika
 import os
 
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -45,6 +46,21 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Gateway", lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://localhost",
+        "http://127.0.0.1",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.post("/vehicles")
 async def create_vehicle(
@@ -86,3 +102,11 @@ async def create_vehicle(
 async def get_vehicles(db: Session = Depends(get_db)):
     result = db.execute(select(Vehicle))
     return list(result.scalars().all())
+
+
+@app.get("/vehicles/{vehicle_id}", response_model=VehicleRead)
+async def get_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
+    vehicle = db.get(Vehicle, vehicle_id)
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    return vehicle

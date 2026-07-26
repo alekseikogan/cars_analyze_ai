@@ -76,3 +76,27 @@ class PricePredictResult(BaseModel):
         le=1,
         description="How reliable the estimate is (0 = guess, 1 = very sure)",
     )
+
+
+class AuctionListingRead(BaseModel):
+    id: int
+    vehicle_id: int
+    brand: str
+    model: str
+    year: int
+    mileage: int
+    color: str | None = None
+    body_type: str
+    predicted_price: float | None = None
+    confidence: float | None = None
+    status: AuctionListingStatus
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+
+class ReserveListingResponse(BaseModel):
+    message: str
+    listing: AuctionListingRead

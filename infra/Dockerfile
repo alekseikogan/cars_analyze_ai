@@ -1,19 +1,15 @@
 FROM python:3.12-slim
 
-# Рабочая директория
 WORKDIR /app
 
-# Копируем зависимости
-COPY requirements.txt .
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
 
-# Устанавливаем зависимости
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем проект
-COPY . .
+COPY backend ./backend
 
-# Открываем порт
-EXPOSE 8000
-
-# Команда запуска
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default command overridden per service in compose
+CMD ["uvicorn", "backend.gateway.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,5 +1,31 @@
 name: car-auction
 
+x-backend: &backend
+  build:
+    context: ..
+    dockerfile: infra/Dockerfile
+  env_file:
+    - ../.env
+  environment: &backend-env
+    POSTGRES_USER: ${POSTGRES_USER:-admin}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+    POSTGRES_DB: ${POSTGRES_DB:-car_auction}
+    POSTGRES_URL: postgresql+psycopg2://admin:secret@postgres:5432/car_auction
+    RABBITMQ_URL: amqp://admin:secret@rabbitmq:5672/
+    MONGO_URL: mongodb://admin:secret@mongodb:27017/?authSource=admin
+    MONGO_DB: ${MONGO_DB:-car_auction}
+    ENRICHMENT_URL: http://enrichment:8002
+    ML_SERVICE_URL: http://ml-service:8001
+    OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+    mongodb:
+      condition: service_healthy
+
 services:
   postgres:
     image: postgres:16
@@ -7,18 +33,30 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
       POSTGRES_DB: ${POSTGRES_DB:-car_auction}
-    env_file:
-      - ../.env
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-car_auction}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   rabbitmq:
     image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: secret
     ports:
-      - "5672:5672"      # AMQP
-      - "15672:15672"    # UI: http://localhost:15672 (guest/guest)
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
 
   mongodb:
     image: mongo:6
@@ -29,6 +67,71 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--quiet",
+          "-u",
+          "admin",
+          "-p",
+          "secret",
+          "--authenticationDatabase",
+          "admin",
+          "--eval",
+          "db.runCommand({ ping: 1 }).ok",
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 12
+
+  gateway:
+    <<: *backend
+    command: ["uvicorn", "backend.gateway.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+
+  enrichment:
+    <<: *backend
+    command: ["uvicorn", "backend.enrichment.app.main:app", "--host", "0.0.0.0", "--port", "8002"]
+    ports:
+      - "8002:8002"
+
+  ml-service:
+    <<: *backend
+    command: ["uvicorn", "backend.ml_service.app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+    ports:
+      - "8001:8001"
+
+  market-price:
+    <<: *backend
+    command: ["python", "-m", "backend.market_price.app.main"]
+
+  orchestrator:
+    <<: *backend
+    command: ["python", "-m", "backend.orchestrator.app.main"]
+
+  auction-worker:
+    <<: *backend
+    command: ["python", "-m", "backend.auction_platform.app.main"]
+
+  auction-api:
+    <<: *backend
+    command: ["uvicorn", "backend.auction_platform.app.api:app", "--host", "0.0.0.0", "--port", "8003"]
+    ports:
+      - "8003:8003"
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - gateway
+      - auction-api
+    restart: unless-stopped
 
 volumes:
   postgres_data:

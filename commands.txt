@@ -1,20 +1,24 @@
-1 - Инфраструктура
-docker compose -f infra/docker-compose.yml up -d
+# Docker (всё сразу)
+docker compose -f infra/docker-compose.yml --env-file .env up --build -d
 
-2 - Gateway
-uvicorn backend.gateway.app.main:app --reload
+# Сайт:        http://localhost:8080
+# Gateway:     http://localhost:8000/docs
+# Auction API: http://localhost:8003/docs
+# RabbitMQ UI: http://localhost:15672  (admin / secret)
 
-3 - Enrichment (OpenAI)
-uvicorn backend.enrichment.app.main:app --reload --port 8002
+# Логи
+docker compose -f infra/docker-compose.yml logs -f
 
-4 - ML Service
-uvicorn backend.ml_service.app.main:app --reload --port 8001
+# Остановка
+docker compose -f infra/docker-compose.yml down
 
-5 - MarketPrice consumer
-python -m backend.market_price.app.main
-
-6 - Orchestrator
-python -m backend.orchestrator.app.main
-
-7 - Auction platform
-python -m backend.auction_platform.app.main
+# --- Локально без Docker (как раньше) ---
+# 1 docker compose -f infra/docker-compose.yml up -d postgres rabbitmq mongodb
+# 2 uvicorn backend.gateway.app.main:app --reload
+# 3 uvicorn backend.enrichment.app.main:app --reload --port 8002
+# 4 uvicorn backend.ml_service.app.main:app --reload --port 8001
+# 5 python -m backend.market_price.app.main
+# 6 python -m backend.orchestrator.app.main
+# 7 python -m backend.auction_platform.app.main
+# 8 uvicorn backend.auction_platform.app.api:app --reload --port 8003
+# 9 cd frontend && npm install && npm run dev
