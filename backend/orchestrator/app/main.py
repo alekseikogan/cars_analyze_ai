@@ -23,7 +23,9 @@ logger = logging.getLogger("orchestrator")
 async def main() -> None:
     logger.info("Orchestrator starting...")
     connection = await start_consumer()
-    logger.info("Orchestrator is running. Waiting for vehicle.created events...")
+    logger.info(
+        "Orchestrator running. Listening for vehicle.created and vehicle.price.completed..."
+    )
     try:
         await asyncio.Future()
     finally:

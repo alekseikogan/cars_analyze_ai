@@ -4,11 +4,21 @@ import logging
 import os
 
 import httpx
+from aio_pika.abc import AbstractExchange
 
 from backend.gateway.app.db import SessionLocal
 from backend.gateway.app.models import Vehicle
-from backend.shared.events import VehicleCreatedEvent
-from backend.shared.schemas import EnrichmentResult, PricePredictResult, VehicleStatus
+from backend.orchestrator.app.publisher import publish_event
+from backend.orchestrator.app.saga import saga_store
+from backend.shared.events import (
+    VEHICLE_PRICE_REQUESTED,
+    VEHICLE_PROCESSING_COMPLETED,
+    VehicleCreatedEvent,
+    VehiclePriceCompletedEvent,
+    VehiclePriceRequestedEvent,
+    VehicleProcessingCompletedEvent,
+)
+from backend.shared.schemas import EnrichmentResult, VehicleStatus
 
 logger = logging.getLogger(__name__)
 
@@ -42,60 +52,85 @@ def _run_enrichment(event: VehicleCreatedEvent) -> EnrichmentResult:
         response.raise_for_status()
     result = EnrichmentResult.model_validate(response.json())
     logger.info(
-        "enrichment done vehicle_id=%s segment=%s options=%s",
+        "enrichment done vehicle_id=%s segment=%s",
         result.vehicle_id,
         result.market_segment,
-        result.likely_options,
     )
     return result
 
 
-def _run_market_price(event: VehicleCreatedEvent) -> None:
-    # Reserved for a dedicated market-price consumer later
-    logger.info("market-price: skip for now vehicle_id=%s", event.vehicle_id)
+async def _try_finish(vehicle_id: int, exchange: AbstractExchange) -> None:
+    state = saga_store.get_or_create(vehicle_id)
+    if not (state.enrichment_done and state.price_done):
+        logger.info(
+            "saga waiting vehicle_id=%s enrichment=%s price=%s",
+            vehicle_id,
+            state.enrichment_done,
+            state.price_done,
+        )
+        return
 
-
-def _run_ml(event: VehicleCreatedEvent) -> PricePredictResult:
-    base_url = os.getenv("ML_SERVICE_URL", "http://127.0.0.1:8001").rstrip("/")
-    payload = {
-        "vehicle_id": event.vehicle_id,
-        "brand": event.brand,
-        "model": event.model,
-        "year": event.year,
-        "mileage": event.mileage,
-        "color": event.color,
-        "body_type": event.body_type,
-    }
-    logger.info("ml-service: calling %s/predict vehicle_id=%s", base_url, event.vehicle_id)
-    with httpx.Client(timeout=30.0) as client:
-        response = client.post(f"{base_url}/predict", json=payload)
-        response.raise_for_status()
-    result = PricePredictResult.model_validate(response.json())
-    logger.info(
-        "ml-service done vehicle_id=%s price=%s confidence=%s",
-        result.vehicle_id,
-        result.predicted_price,
-        result.confidence,
+    _set_status(vehicle_id, VehicleStatus.READY)
+    await publish_event(
+        exchange,
+        VEHICLE_PROCESSING_COMPLETED,
+        VehicleProcessingCompletedEvent(
+            vehicle_id=vehicle_id,
+            predicted_price=state.predicted_price,
+            confidence=state.confidence,
+        ),
     )
-    return result
+    saga_store.clear(vehicle_id)
+    logger.info("orchestrator finished vehicle_id=%s status=ready", vehicle_id)
 
 
-def process_vehicle_created(event: VehicleCreatedEvent) -> None:
-    """Pipeline after vehicle.created: processing → steps → ready|failed."""
+async def process_vehicle_created(
+    event: VehicleCreatedEvent,
+    exchange: AbstractExchange,
+) -> None:
+    """Start saga: enrichment (HTTP for now) + request market price via event."""
     logger.info("orchestrator received vehicle.created: %s", event.model_dump())
+    state = saga_store.get_or_create(event.vehicle_id)
 
     _set_status(event.vehicle_id, VehicleStatus.PROCESSING)
 
     try:
         _run_enrichment(event)
-        _run_market_price(event)
-        _run_ml(event)
-        _set_status(event.vehicle_id, VehicleStatus.READY)
-        logger.info("orchestrator finished vehicle_id=%s status=ready", event.vehicle_id)
+        state.enrichment_done = True
+
+        price_request = VehiclePriceRequestedEvent(
+            vehicle_id=event.vehicle_id,
+            brand=event.brand,
+            model=event.model,
+            year=event.year,
+            mileage=event.mileage,
+            color=event.color,
+            body_type=event.body_type,
+        )
+        await publish_event(exchange, VEHICLE_PRICE_REQUESTED, price_request)
+        # READY only after vehicle.price.completed (see process_price_completed)
     except Exception:
         logger.exception("orchestrator failed vehicle_id=%s", event.vehicle_id)
         try:
             _set_status(event.vehicle_id, VehicleStatus.FAILED)
         except Exception:
             logger.exception("failed to mark vehicle_id=%s as failed", event.vehicle_id)
+        saga_store.clear(event.vehicle_id)
         raise
+
+
+async def process_price_completed(
+    event: VehiclePriceCompletedEvent,
+    exchange: AbstractExchange,
+) -> None:
+    logger.info(
+        "orchestrator received price.completed vehicle_id=%s price=%s confidence=%s",
+        event.vehicle_id,
+        event.predicted_price,
+        event.confidence,
+    )
+    state = saga_store.get_or_create(event.vehicle_id)
+    state.price_done = True
+    state.predicted_price = event.predicted_price
+    state.confidence = event.confidence
+    await _try_finish(event.vehicle_id, exchange)

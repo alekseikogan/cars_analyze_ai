@@ -1,14 +1,17 @@
-1 - Создать и запустить все сервисы
+1 - Инфраструктура
 docker compose -f infra/docker-compose.yml up -d
 
-2 - Запуск Gateway
+2 - Gateway
 uvicorn backend.gateway.app.main:app --reload
 
-3 - Запуск Enrichment (OpenAI)
+3 - Enrichment (OpenAI)
 uvicorn backend.enrichment.app.main:app --reload --port 8002
 
-4 - Запуск ML Service
+4 - ML Service
 uvicorn backend.ml_service.app.main:app --reload --port 8001
 
-5 - Запуск Orchestrator (отдельный терминал)
+5 - MarketPrice consumer
+python -m backend.market_price.app.main
+
+6 - Orchestrator
 python -m backend.orchestrator.app.main
