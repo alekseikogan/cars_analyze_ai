@@ -72,6 +72,7 @@ async def create_vehicle(
 
     return {
         "message": "Vehicle created successfully",
+        "id": db_vehicle.id,
         "vehicle": vehicle.model_dump(),
     }
 
