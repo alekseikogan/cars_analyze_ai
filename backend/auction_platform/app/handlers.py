@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_listing_from_event(event: VehicleProcessingCompletedEvent) -> AuctionListing:
+    """Insert or update the auction listing for a vehicle that finished processing."""
     db = SessionLocal()
     try:
         vehicle = db.get(Vehicle, event.vehicle_id)
@@ -67,6 +68,7 @@ def create_listing_from_event(event: VehicleProcessingCompletedEvent) -> Auction
 
 
 async def process_processing_completed(event: VehicleProcessingCompletedEvent) -> None:
+    """Handle vehicle.processing.completed by creating the auction listing."""
     logger.info(
         "auction received processing.completed vehicle_id=%s price=%s",
         event.vehicle_id,

@@ -18,6 +18,7 @@ async def process_price_requested(
     event: VehiclePriceRequestedEvent,
     exchange: AbstractExchange,
 ) -> None:
+    """Estimate the price and publish vehicle.price.completed."""
     logger.info("market-price received request: %s", event.model_dump())
     result = predict_price(event)
     completed = VehiclePriceCompletedEvent(

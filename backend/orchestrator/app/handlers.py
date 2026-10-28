@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def _set_status(vehicle_id: int, status: VehicleStatus) -> None:
+    """Write the vehicle processing status in Postgres."""
     db = SessionLocal()
     try:
         vehicle = db.get(Vehicle, vehicle_id)
@@ -36,6 +37,7 @@ def _set_status(vehicle_id: int, status: VehicleStatus) -> None:
 
 
 def _run_enrichment(event: VehicleCreatedEvent) -> EnrichmentResult:
+    """Call the enrichment service and return the LLM description of the vehicle."""
     base_url = os.getenv("ENRICHMENT_URL", "http://127.0.0.1:8002").rstrip("/")
     payload = {
         "vehicle_id": event.vehicle_id,
@@ -113,6 +115,7 @@ async def _compensate(vehicle_id: int, state: PipelineState, error: str) -> None
 
 
 async def _try_finish(vehicle_id: int, exchange: AbstractExchange) -> None:
+    """Mark the vehicle ready and publish processing-completed once both steps are done."""
     state = await saga_store.get_or_create(vehicle_id)
     if state.status in {"compensated", "failed"}:
         logger.info("skip finish for terminal saga vehicle_id=%s", vehicle_id)
@@ -186,6 +189,7 @@ async def process_price_completed(
     event: VehiclePriceCompletedEvent,
     exchange: AbstractExchange,
 ) -> None:
+    """Store the price estimate and finish the saga when enrichment is also done."""
     logger.info(
         "orchestrator received price.completed vehicle_id=%s price=%s confidence=%s",
         event.vehicle_id,

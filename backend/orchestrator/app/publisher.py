@@ -14,6 +14,7 @@ async def publish_event(
     routing_key: str,
     event: BaseModel,
 ) -> None:
+    """Publish a JSON event to the vehicle exchange."""
     message = aio_pika.Message(
         body=event.model_dump_json().encode("utf-8"),
         content_type="application/json",

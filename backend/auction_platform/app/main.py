@@ -21,6 +21,7 @@ logger = logging.getLogger("auction-platform")
 
 
 def init_tables() -> None:
+    """Create the Postgres tables used by the auction worker."""
     from backend.auction_platform.app import models  # noqa: F401
     from backend.gateway.app import models as gateway_models  # noqa: F401
 
@@ -29,6 +30,7 @@ def init_tables() -> None:
 
 
 async def main() -> None:
+    """Run the auction worker until it is stopped."""
     logger.info("Auction platform starting...")
     init_tables()
     connection = await start_consumer()

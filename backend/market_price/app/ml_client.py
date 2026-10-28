@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def predict_price(event: VehiclePriceRequestedEvent) -> PricePredictResult:
+    """Call the ML service and return the price estimate."""
     base_url = os.getenv("ML_SERVICE_URL", "http://127.0.0.1:8001").rstrip("/")
     payload = {
         "vehicle_id": event.vehicle_id,

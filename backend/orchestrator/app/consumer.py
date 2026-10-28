@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 async def start_consumer() -> aio_pika.RobustConnection:
+    """Consume vehicle.created and vehicle.price.completed for the saga."""
     url = os.getenv("RABBITMQ_URL")
     if not url:
         raise RuntimeError("RABBITMQ_URL is not set")
@@ -44,6 +45,7 @@ async def start_consumer() -> aio_pika.RobustConnection:
     await price_done_queue.bind(exchange, routing_key=VEHICLE_PRICE_COMPLETED)
 
     async def _on_created(message: AbstractIncomingMessage) -> None:
+        """Parse vehicle.created and start enrichment plus the price request."""
         async with message.process(requeue=False):
             try:
                 event = VehicleCreatedEvent.model_validate_json(message.body)
@@ -53,6 +55,7 @@ async def start_consumer() -> aio_pika.RobustConnection:
             await process_vehicle_created(event, exchange)
 
     async def _on_price_completed(message: AbstractIncomingMessage) -> None:
+        """Parse vehicle.price.completed and continue the saga."""
         async with message.process(requeue=False):
             try:
                 event = VehiclePriceCompletedEvent.model_validate_json(message.body)

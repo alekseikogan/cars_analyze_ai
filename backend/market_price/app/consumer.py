@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 async def start_consumer() -> aio_pika.RobustConnection:
+    """Consume vehicle.price.requested and forward each one to the ML service."""
     url = os.getenv("RABBITMQ_URL")
     if not url:
         raise RuntimeError("RABBITMQ_URL is not set")
@@ -34,6 +35,7 @@ async def start_consumer() -> aio_pika.RobustConnection:
     await queue.bind(exchange, routing_key=VEHICLE_PRICE_REQUESTED)
 
     async def _on_message(message: AbstractIncomingMessage) -> None:
+        """Parse a price request and ask the ML service for an estimate."""
         async with message.process(requeue=False):
             try:
                 event = VehiclePriceRequestedEvent.model_validate_json(message.body)

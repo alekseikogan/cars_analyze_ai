@@ -22,6 +22,7 @@ Return ONLY valid JSON with these keys:
 
 
 def enrich_vehicle(payload: EnrichmentRequest) -> EnrichmentResult:
+    """Ask OpenAI for trim, options, market segment and a short listing summary."""
     client = OpenAI(api_key=get_openai_api_key())
     model = get_openai_model()
 

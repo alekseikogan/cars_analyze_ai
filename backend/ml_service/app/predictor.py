@@ -33,6 +33,7 @@ _BRAND_FACTOR: dict[str, float] = {
 
 
 def _normalize(value: str | None) -> str:
+    """Lowercase and strip a brand or body type before lookup."""
     return (value or "").strip().lower()
 
 

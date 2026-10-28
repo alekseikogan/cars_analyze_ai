@@ -24,6 +24,7 @@ class Base(DeclarativeBase):
 
 
 def get_db() -> Generator[Session, None, None]:
+    """Yield a Postgres session and close it when the caller is done."""
     db = SessionLocal()
     try:
         yield db
@@ -32,6 +33,7 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
+    """Create the Postgres tables registered on the shared metadata."""
     # Import models so they register on Base.metadata
     from backend.gateway.app import models  # noqa: F401
     from backend.auction_platform.app import models as auction_models  # noqa: F401

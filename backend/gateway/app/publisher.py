@@ -5,6 +5,7 @@ from backend.shared.events import VEHICLE_CREATED, VehicleCreatedEvent
 
 
 async def publish_vehicle_created(event: VehicleCreatedEvent, request: Request) -> None:
+    """Publish vehicle.created so the orchestrator starts processing."""
     try:
         exchange = request.app.state.exchange
         message = aio_pika.Message(
