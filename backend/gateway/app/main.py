@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
+from backend.assistant.app.routes import router as assistant_router
 from backend.shared.schemas import VehicleCreate, VehicleRead
 from backend.gateway.app.db import get_db, init_db
 from backend.gateway.app.models import Vehicle
@@ -46,6 +47,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Gateway", lifespan=lifespan)
+app.include_router(assistant_router)
 
 app.add_middleware(
     CORSMiddleware,

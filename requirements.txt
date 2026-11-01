@@ -20,8 +20,14 @@ pymongo>=4.10.0
 # RabbitMQ
 aio-pika>=9.4.0
 
-# OpenAI (enrichment)
+# OpenAI (enrichment + staff chat)
 openai>=1.55.0
+langgraph>=0.2.60
+langchain-core>=0.3.40
+langchain-openai>=0.3.0
+
+# Auth
+PyJWT>=2.9.0
 
 # Utils
 python-dotenv>=1.0.1

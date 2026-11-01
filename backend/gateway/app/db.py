@@ -37,5 +37,9 @@ def init_db() -> None:
     # Import models so they register on Base.metadata
     from backend.gateway.app import models  # noqa: F401
     from backend.auction_platform.app import models as auction_models  # noqa: F401
+    from backend.assistant.app import models as assistant_models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    from backend.assistant.app.seed import seed_demo_data
+
+    seed_demo_data()

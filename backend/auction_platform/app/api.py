@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.auction_platform.app.models import AuctionListing
+from backend.assistant.app.seed import seed_demo_data
 from backend.gateway.app.db import Base, engine, get_db
+from backend.shared.security import decode_token
 from backend.shared.schemas import (
     AuctionListingRead,
     AuctionListingStatus,
@@ -21,8 +23,10 @@ async def lifespan(app: FastAPI):
     """Создаёт таблицы аукциона и авто до приёма запросов."""
     from backend.auction_platform.app import models as auction_models  # noqa: F401
     from backend.gateway.app import models as gateway_models  # noqa: F401
+    from backend.assistant.app import models as assistant_models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    seed_demo_data()
     yield
 
 
@@ -83,8 +87,22 @@ def get_listing(listing_id: int, db: Session = Depends(get_db)):
     return listing
 
 
+def _require_auction_manager(authorization: str | None = Header(default=None)) -> dict:
+    """Пускает к брони только менеджера аукциона."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Войдите как менеджер аукциона")
+    payload = decode_token(authorization.split(" ", 1)[1].strip())
+    if payload.get("role") != "auction_manager":
+        raise HTTPException(status_code=403, detail="Бронировать может только менеджер аукциона")
+    return payload
+
+
 @app.post("/listings/{listing_id}/reserve", response_model=ReserveListingResponse)
-def reserve_listing(listing_id: int, db: Session = Depends(get_db)):
+def reserve_listing(
+    listing_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(_require_auction_manager),
+):
     """Резервирует готовую карточку, переводя её в статус listed."""
     listing = db.get(AuctionListing, listing_id)
     if listing is None:

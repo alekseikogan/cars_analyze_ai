@@ -1,10 +1,16 @@
+function authHeaders() {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function request(url, options = {}) {
   const res = await fetch(url, {
+    ...options,
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders(),
       ...(options.headers || {}),
     },
-    ...options,
   });
 
   let data = null;
@@ -54,5 +60,47 @@ export function getListingByVehicle(vehicleId) {
 export function reserveListing(id) {
   return request(`/auction-api/listings/${id}/reserve`, {
     method: "POST",
+  });
+}
+
+export function registerAccount(payload) {
+  return request("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function loginAccount(payload) {
+  return request("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function me() {
+  return request("/api/auth/me");
+}
+
+export function listChatSessions(q = "") {
+  const query = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
+  return request(`/api/chat/sessions${query}`);
+}
+
+export function createChatSession() {
+  return request("/api/chat/sessions", { method: "POST" });
+}
+
+export function getChatSession(id) {
+  return request(`/api/chat/sessions/${id}`);
+}
+
+export function deleteChatSession(id) {
+  return request(`/api/chat/sessions/${id}`, { method: "DELETE" });
+}
+
+export function sendChatMessage(id, content) {
+  return request(`/api/chat/sessions/${id}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
   });
 }

@@ -17,6 +17,7 @@ x-backend: &backend
     ENRICHMENT_URL: http://enrichment:8002
     ML_SERVICE_URL: http://ml-service:8001
     OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+    AUTH_SECRET: ${AUTH_SECRET:-dev-auth-secret-change-me-please-32}
   restart: unless-stopped
   depends_on:
     postgres:

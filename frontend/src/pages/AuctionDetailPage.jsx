@@ -1,15 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getListing, reserveListing } from "../api";
-
-function formatPrice(value) {
-  if (value == null) return "цена уточняется";
-  return new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+import { useAuth } from "../auth";
+import { formatPrice } from "../format";
 
 export default function AuctionDetailPage() {
   const { id } = useParams();
@@ -19,6 +12,7 @@ export default function AuctionDetailPage() {
   const [reserving, setReserving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalText, setModalText] = useState("");
+  const { user } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +64,8 @@ export default function AuctionDetailPage() {
     );
   }
 
-  const canReserve = listing.status === "ready_for_sale";
+  const isAvailable = listing.status === "ready_for_sale";
+  const canReserve = isAvailable && user?.role === "auction_manager";
 
   return (
     <div className="page">
@@ -121,18 +116,21 @@ export default function AuctionDetailPage() {
 
         {error && <p className="error">{error}</p>}
 
-        <button
-          type="button"
-          className="btn primary"
-          disabled={!canReserve || reserving}
-          onClick={onReserve}
-        >
-          {canReserve
-            ? reserving
-              ? "Бронируем..."
-              : "Забронировать авто"
-            : "Уже забронировано"}
-        </button>
+        {canReserve ? (
+          <button type="button" className="btn primary" disabled={reserving} onClick={onReserve}>
+            {reserving ? "Бронируем..." : "Забронировать авто"}
+          </button>
+        ) : isAvailable ? (
+          <p className="muted">
+            {user
+              ? "Бронировать может менеджер аукциона."
+              : "Чтобы забронировать, войдите как менеджер аукциона."}
+          </p>
+        ) : (
+          <button type="button" className="btn" disabled>
+            Уже забронировано
+          </button>
+        )}
       </div>
 
       {modalOpen && (

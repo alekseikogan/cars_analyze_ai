@@ -1,15 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getListings } from "../api";
-
-function formatPrice(value) {
-  if (value == null) return "цена уточняется";
-  return new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+import { formatPrice } from "../format";
 
 export default function AuctionListPage() {
   const [listings, setListings] = useState([]);
