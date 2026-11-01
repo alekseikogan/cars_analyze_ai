@@ -14,10 +14,12 @@ from backend.shared.schemas import AuctionListingStatus, PricePredictRequest
 
 
 def _dumps(payload: object) -> str:
+    """Сериализует ответ инструмента в JSON с русскими буквами."""
     return json.dumps(payload, ensure_ascii=False)
 
 
 def _status_label(status: AuctionListingStatus | str) -> str:
+    """Переводит статус лота в «доступно» или «забронировано»."""
     value = status.value if isinstance(status, AuctionListingStatus) else str(status)
     if value == AuctionListingStatus.LISTED.value:
         return "забронировано"
@@ -27,6 +29,7 @@ def _status_label(status: AuctionListingStatus | str) -> str:
 
 
 def _listing_payload(row: AuctionListing) -> dict:
+    """Собирает поля лота, которые модель может процитировать."""
     return {
         "listing_id": row.id,
         "vehicle_id": row.vehicle_id,
@@ -51,10 +54,10 @@ def search_listings(
     status: str = "",
     limit: int = 8,
 ) -> str:
-    """Search auction listings by brand, model, year, body type or status.
+    """Ищет лоты по марке, модели, году, кузову и статусу.
 
-    Use empty strings and year 0 when that filter is unknown.
-    status is one of: доступно, забронировано, or empty for any.
+    Неизвестный фильтр передавай пустой строкой, год — нулём.
+    status: «доступно», «забронировано» или пустая строка, если статус не важен.
     """
     take = min(max(limit, 1), 10)
     db = SessionLocal()
@@ -80,7 +83,7 @@ def search_listings(
 
 @tool
 def get_listing(listing_id: int) -> str:
-    """Get one auction listing by its listing_id, including price and status."""
+    """Возвращает один лот по listing_id: цена, пробег и статус."""
     db = SessionLocal()
     try:
         row = db.get(AuctionListing, listing_id)
@@ -93,7 +96,7 @@ def get_listing(listing_id: int) -> str:
 
 @tool
 def get_vehicle(vehicle_id: int) -> str:
-    """Get the vehicle card by vehicle_id: brand, model, year, mileage, status."""
+    """Возвращает карточку машины по vehicle_id: марка, модель, год, пробег и статус."""
     db = SessionLocal()
     try:
         row = db.get(Vehicle, vehicle_id)
@@ -125,9 +128,9 @@ def estimate_price(
     body_type: str,
     color: str = "",
 ) -> str:
-    """Estimate a car price in EUR with the same formula the ML service uses.
+    """Считает цену в евро той же формулой, что и ML-сервис.
 
-    Use this when the car is not in the auction catalog yet.
+    Вызывай, когда машины ещё нет в каталоге аукциона.
     """
     result = predict(
         PricePredictRequest(
@@ -155,7 +158,7 @@ def estimate_price(
 
 @tool
 def reserve_listing(listing_id: int) -> str:
-    """Reserve an available auction listing. Only call this when the manager explicitly asks to reserve that listing_id."""
+    """Бронирует доступный лот. Вызывай только если менеджер явно просит забронировать этот listing_id."""
     db = SessionLocal()
     try:
         row = db.get(AuctionListing, listing_id)
@@ -181,7 +184,7 @@ def reserve_listing(listing_id: int) -> str:
 
 @tool
 def get_enrichment(vehicle_id: int) -> str:
-    """Read the saved LLM description of a vehicle: trim, options, segment and summary."""
+    """Читает сохранённое описание машины: комплектация, опции, сегмент и краткий текст."""
     url = os.getenv("MONGO_URL", "").strip()
     if not url:
         return _dumps({"vehicle_id": vehicle_id, "enrichment": None, "note": "Mongo is not configured"})

@@ -23,28 +23,38 @@ ROLES = {"support", "auction_manager"}
 
 
 class RegisterRequest(BaseModel):
+    """Логин, пароль и роль нового сотрудника."""
+
     login: str = Field(min_length=3, max_length=64)
     password: str = Field(min_length=6, max_length=128)
     role: str
 
 
 class LoginRequest(BaseModel):
+    """Логин и пароль для входа."""
+
     login: str
     password: str
 
 
 class UserRead(BaseModel):
+    """Сотрудник без пароля: id, логин и роль."""
+
     id: int
     login: str
     role: str
 
 
 class AuthResponse(BaseModel):
+    """Токен сессии и данные вошедшего сотрудника."""
+
     token: str
     user: UserRead
 
 
 class SessionRead(BaseModel):
+    """Краткое описание чата для списка в боковой панели."""
+
     model_config = {"from_attributes": True}
 
     id: str
@@ -54,6 +64,8 @@ class SessionRead(BaseModel):
 
 
 class MessageRead(BaseModel):
+    """Одна реплика чата: роль, текст и время."""
+
     id: int
     role: str
     content: str
@@ -61,10 +73,14 @@ class MessageRead(BaseModel):
 
 
 class SessionDetail(SessionRead):
+    """Чат вместе со всеми сообщениями."""
+
     messages: list[MessageRead]
 
 
 class SendMessageRequest(BaseModel):
+    """Текст нового вопроса сотрудника."""
+
     content: str = Field(min_length=1, max_length=4000)
 
 
@@ -83,6 +99,7 @@ def get_current_user(
 
 
 def _auth_response(user: User) -> AuthResponse:
+    """Собирает токен и краткие данные сотрудника для ответа клиенту."""
     return AuthResponse(
         token=create_token(user.id, user.login, user.role),
         user=UserRead(id=user.id, login=user.login, role=user.role),
@@ -90,6 +107,7 @@ def _auth_response(user: User) -> AuthResponse:
 
 
 def _own_session(db: Session, user: User, session_id: str) -> ChatSession:
+    """Возвращает чат сотрудника или 404, если сессия чужая или её нет."""
     session = db.get(ChatSession, session_id)
     if session is None or session.user_id != user.id:
         raise HTTPException(status_code=404, detail="Чат не найден")

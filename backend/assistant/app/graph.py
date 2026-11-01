@@ -26,11 +26,14 @@ Keep the answer short and name listing_id when you talk about a specific lot.
 
 
 class ChatState(TypedDict):
+    """Состояние графа: история сообщений сессии и роль сотрудника."""
+
     messages: Annotated[list, add_messages]
     role: str
 
 
 def _answer_text(message: AIMessage) -> str:
+    """Достаёт текст из ответа модели, если он пришёл строкой или списком блоков."""
     content = message.content
     if isinstance(content, str):
         return content.strip()

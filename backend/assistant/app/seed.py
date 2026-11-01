@@ -75,6 +75,7 @@ DEMO_USERS = (
 
 
 def _specs() -> list[dict]:
+    """Собирает 50 разных машин: год, пробег и цвет зависят от номера в каталоге."""
     rows = []
     for index, (brand, model, body) in enumerate(CATALOG):
         rows.append(
