@@ -20,7 +20,7 @@ logger = logging.getLogger("market-price")
 
 
 async def main() -> None:
-    """Listen for price requests until shutdown."""
+    """Слушает запросы цены до остановки."""
     logger.info("MarketPrice starting...")
     connection = await start_consumer()
     logger.info("Waiting for vehicle.price.requested...")

@@ -17,7 +17,7 @@ async def publish_price_completed(
     exchange: AbstractExchange,
     event: VehiclePriceCompletedEvent,
 ) -> None:
-    """Publish vehicle.price.completed with the estimate."""
+    """Публикует vehicle.price.completed с оценкой цены."""
     message = aio_pika.Message(
         body=event.model_dump_json().encode("utf-8"),
         content_type="application/json",

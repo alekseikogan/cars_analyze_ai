@@ -22,7 +22,7 @@ logger = logging.getLogger("orchestrator")
 
 
 async def main() -> None:
-    """Connect MongoDB and listen for saga events until shutdown."""
+    """Подключается к MongoDB и слушает события саги до остановки."""
     logger.info("Orchestrator starting...")
     await connect_mongo()
     connection = await start_consumer()

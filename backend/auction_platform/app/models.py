@@ -10,7 +10,7 @@ from backend.shared.schemas import AuctionListingStatus
 
 
 class AuctionListing(Base):
-    """Vehicles ready to be published for sale on the auction platform."""
+    """Автомобили, готовые к публикации на аукционе."""
 
     __tablename__ = "auction_listings"
     __table_args__ = (UniqueConstraint("vehicle_id", name="uq_auction_listings_vehicle_id"),)

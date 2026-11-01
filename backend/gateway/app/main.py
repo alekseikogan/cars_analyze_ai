@@ -21,7 +21,7 @@ from backend.shared.events import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create tables, then connect RabbitMQ and declare the vehicle.created queue."""
+    """Создаёт таблицы, подключается к RabbitMQ и объявляет очередь vehicle.created."""
     print("Application starting...")
     init_db()
 
@@ -69,7 +69,7 @@ async def create_vehicle(
     request: Request,
     db: Session = Depends(get_db),
 ) -> dict:
-    """Save a vehicle and start the enrichment and pricing pipeline."""
+    """Сохраняет авто и запускает пайплайн обогащения и оценки цены."""
     db_vehicle = Vehicle(
         brand=vehicle.brand,
         model=vehicle.model,
@@ -102,14 +102,14 @@ async def create_vehicle(
 
 @app.get("/vehicles", response_model=list[VehicleRead])
 async def get_vehicles(db: Session = Depends(get_db)):
-    """Return every saved vehicle."""
+    """Возвращает все сохранённые автомобили."""
     result = db.execute(select(Vehicle))
     return list(result.scalars().all())
 
 
 @app.get("/vehicles/{vehicle_id}", response_model=VehicleRead)
 async def get_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
-    """Return one vehicle by id."""
+    """Возвращает один автомобиль по id."""
     vehicle = db.get(Vehicle, vehicle_id)
     if vehicle is None:
         raise HTTPException(status_code=404, detail="Vehicle not found")

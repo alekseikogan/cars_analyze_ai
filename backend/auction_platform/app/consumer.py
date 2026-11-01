@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 async def start_consumer() -> aio_pika.RobustConnection:
-    """Consume vehicle.processing.completed and create auction listings."""
+    """Слушает vehicle.processing.completed и создаёт карточки аукциона."""
     url = os.getenv("RABBITMQ_URL")
     if not url:
         raise RuntimeError("RABBITMQ_URL is not set")
@@ -35,7 +35,7 @@ async def start_consumer() -> aio_pika.RobustConnection:
     await queue.bind(exchange, routing_key=VEHICLE_PROCESSING_COMPLETED)
 
     async def _on_message(message: AbstractIncomingMessage) -> None:
-        """Parse a processing-completed event and create the listing."""
+        """Разбирает событие processing-completed и создаёт карточку."""
         async with message.process(requeue=False):
             try:
                 event = VehicleProcessingCompletedEvent.model_validate_json(message.body)

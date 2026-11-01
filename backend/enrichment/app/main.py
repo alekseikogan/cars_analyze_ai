@@ -15,13 +15,13 @@ app = FastAPI(title="Enrichment Service")
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    """Report that the enrichment service is up."""
+    """Проверяет, что сервис обогащения запущен."""
     return {"status": "ok"}
 
 
 @app.post("/enrich", response_model=EnrichmentResult)
 def enrich(payload: EnrichmentRequest) -> EnrichmentResult:
-    """Enrich a vehicle listing through the LLM and return structured fields."""
+    """Обогащает карточку авто через LLM и возвращает структурированные поля."""
     try:
         result = enrich_vehicle(payload)
     except RuntimeError as exc:

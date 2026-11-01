@@ -15,13 +15,13 @@ app = FastAPI(title="ML Price Service")
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    """Report that the ML service is up."""
+    """Проверяет, что ML-сервис запущен."""
     return {"status": "ok"}
 
 
 @app.post("/predict", response_model=PricePredictResult)
 def predict_price(payload: PricePredictRequest) -> PricePredictResult:
-    """Estimate a vehicle price from its attributes."""
+    """Оценивает цену авто по его характеристикам."""
     try:
         result = predict(payload)
     except Exception as exc:

@@ -12,7 +12,7 @@ _db: AsyncIOMotorDatabase | None = None
 
 
 async def connect_mongo() -> AsyncIOMotorDatabase:
-    """Open the MongoDB connection and confirm it answers a ping."""
+    """Открывает соединение с MongoDB и проверяет его ping-ом."""
     global _client, _db
 
     url = os.getenv("MONGO_URL")
@@ -28,7 +28,7 @@ async def connect_mongo() -> AsyncIOMotorDatabase:
 
 
 async def close_mongo() -> None:
-    """Close the MongoDB connection."""
+    """Закрывает соединение с MongoDB."""
     global _client, _db
     if _client is not None:
         _client.close()
@@ -38,7 +38,7 @@ async def close_mongo() -> None:
 
 
 def get_db() -> AsyncIOMotorDatabase:
-    """Return the connected Mongo database."""
+    """Возвращает подключённую базу Mongo."""
     if _db is None:
         raise RuntimeError("MongoDB is not connected. Call connect_mongo() first.")
     return _db

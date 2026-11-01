@@ -33,12 +33,12 @@ _BRAND_FACTOR: dict[str, float] = {
 
 
 def _normalize(value: str | None) -> str:
-    """Lowercase and strip a brand or body type before lookup."""
+    """Приводит бренд или тип кузова к нижнему регистру перед поиском."""
     return (value or "").strip().lower()
 
 
 def predict(request: PricePredictRequest) -> PricePredictResult:
-    """Heuristic price estimate for the auction demo pipeline."""
+    """Эвристическая оценка цены для демо-пайплайна аукциона."""
     current_year = datetime.now().year
     age = max(current_year - request.year, 0)
 

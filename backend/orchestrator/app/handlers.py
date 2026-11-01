@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def _set_status(vehicle_id: int, status: VehicleStatus) -> None:
-    """Write the vehicle processing status in Postgres."""
+    """Записывает статус обработки авто в Postgres."""
     db = SessionLocal()
     try:
         vehicle = db.get(Vehicle, vehicle_id)
@@ -37,7 +37,7 @@ def _set_status(vehicle_id: int, status: VehicleStatus) -> None:
 
 
 def _run_enrichment(event: VehicleCreatedEvent) -> EnrichmentResult:
-    """Call the enrichment service and return the LLM description of the vehicle."""
+    """Вызывает сервис обогащения и возвращает LLM-описание авто."""
     base_url = os.getenv("ENRICHMENT_URL", "http://127.0.0.1:8002").rstrip("/")
     payload = {
         "vehicle_id": event.vehicle_id,
@@ -62,7 +62,7 @@ def _run_enrichment(event: VehicleCreatedEvent) -> EnrichmentResult:
 
 
 async def _compensate(vehicle_id: int, state: PipelineState, error: str) -> None:
-    """Rollback completed saga steps (best-effort) and archive as compensated."""
+    """Откатывает выполненные шаги саги (по возможности) и архивирует её как compensated."""
     had_price = state.price_done
     had_price_request = state.price_requested
     had_enrichment = state.enrichment_done
@@ -115,7 +115,7 @@ async def _compensate(vehicle_id: int, state: PipelineState, error: str) -> None
 
 
 async def _try_finish(vehicle_id: int, exchange: AbstractExchange) -> None:
-    """Mark the vehicle ready and publish processing-completed once both steps are done."""
+    """Ставит авто статус ready и публикует processing-completed, когда оба шага готовы."""
     state = await saga_store.get_or_create(vehicle_id)
     if state.status in {"compensated", "failed"}:
         logger.info("skip finish for terminal saga vehicle_id=%s", vehicle_id)
@@ -155,7 +155,7 @@ async def process_vehicle_created(
     event: VehicleCreatedEvent,
     exchange: AbstractExchange,
 ) -> None:
-    """Start saga: enrichment + request market price via event."""
+    """Стартует сагу: обогащение и запрос рыночной цены через событие."""
     logger.info("orchestrator received vehicle.created: %s", event.model_dump())
     state = await saga_store.get_or_create(event.vehicle_id)
 
@@ -189,7 +189,7 @@ async def process_price_completed(
     event: VehiclePriceCompletedEvent,
     exchange: AbstractExchange,
 ) -> None:
-    """Store the price estimate and finish the saga when enrichment is also done."""
+    """Сохраняет оценку цены и завершает сагу, если обогащение тоже готово."""
     logger.info(
         "orchestrator received price.completed vehicle_id=%s price=%s confidence=%s",
         event.vehicle_id,

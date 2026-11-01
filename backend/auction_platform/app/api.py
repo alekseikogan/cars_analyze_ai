@@ -18,7 +18,7 @@ from backend.shared.schemas import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create auction and vehicle tables before the API accepts requests."""
+    """Создаёт таблицы аукциона и авто до приёма запросов."""
     from backend.auction_platform.app import models as auction_models  # noqa: F401
     from backend.gateway.app import models as gateway_models  # noqa: F401
 
@@ -46,7 +46,7 @@ app.add_middleware(
 
 @app.get("/listings", response_model=list[AuctionListingRead])
 def list_listings(db: Session = Depends(get_db)):
-    """Return listings that are ready for sale or already reserved, newest first."""
+    """Возвращает карточки, готовые к продаже или уже зарезервированные, сначала новые."""
     result = db.execute(
         select(AuctionListing)
         .where(
@@ -64,7 +64,7 @@ def list_listings(db: Session = Depends(get_db)):
 
 @app.get("/listings/by-vehicle/{vehicle_id}", response_model=AuctionListingRead)
 def get_listing_by_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
-    """Return the auction listing for a vehicle, or 404 if it is not created yet."""
+    """Возвращает карточку аукциона по авто или 404, если её ещё нет."""
     result = db.execute(
         select(AuctionListing).where(AuctionListing.vehicle_id == vehicle_id)
     )
@@ -76,7 +76,7 @@ def get_listing_by_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
 
 @app.get("/listings/{listing_id}", response_model=AuctionListingRead)
 def get_listing(listing_id: int, db: Session = Depends(get_db)):
-    """Return one auction listing by its id."""
+    """Возвращает одну карточку аукциона по id."""
     listing = db.get(AuctionListing, listing_id)
     if listing is None:
         raise HTTPException(status_code=404, detail="Listing not found")
@@ -85,7 +85,7 @@ def get_listing(listing_id: int, db: Session = Depends(get_db)):
 
 @app.post("/listings/{listing_id}/reserve", response_model=ReserveListingResponse)
 def reserve_listing(listing_id: int, db: Session = Depends(get_db)):
-    """Reserve a ready listing by moving it to the listed status."""
+    """Резервирует готовую карточку, переводя её в статус listed."""
     listing = db.get(AuctionListing, listing_id)
     if listing is None:
         raise HTTPException(status_code=404, detail="Listing not found")

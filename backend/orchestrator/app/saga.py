@@ -20,23 +20,23 @@ class PipelineState:
 
 
 class SagaStore:
-    """Active saga in `sagas`; finished/failed copies go to `saga_history`."""
+    """Активная сага в `sagas`; завершённые и упавшие копии уходят в `saga_history`."""
 
     active_collection = "sagas"
     history_collection = "saga_history"
 
     @property
     def collection(self):
-        """Return the collection of sagas that are still running."""
+        """Возвращает коллекцию ещё идущих саг."""
         return get_db()[self.active_collection]
 
     @property
     def history(self):
-        """Return the collection of finished and failed sagas."""
+        """Возвращает коллекцию завершённых и упавших саг."""
         return get_db()[self.history_collection]
 
     def _to_state(self, doc: dict) -> PipelineState:
-        """Build a pipeline state from a Mongo document."""
+        """Собирает состояние пайплайна из документа Mongo."""
         return PipelineState(
             enrichment_done=bool(doc.get("enrichment_done", False)),
             price_requested=bool(doc.get("price_requested", False)),
@@ -50,14 +50,14 @@ class SagaStore:
         )
 
     async def get(self, vehicle_id: int) -> PipelineState | None:
-        """Load the active saga for a vehicle, if one exists."""
+        """Загружает активную сагу авто, если она есть."""
         doc = await self.collection.find_one({"_id": vehicle_id})
         if doc is None:
             return None
         return self._to_state(doc)
 
     async def get_or_create(self, vehicle_id: int) -> PipelineState:
-        """Load the active saga or start a new one for this vehicle."""
+        """Загружает активную сагу или создаёт новую для этого авто."""
         state = await self.get(vehicle_id)
         if state is None:
             state = PipelineState()
@@ -65,7 +65,7 @@ class SagaStore:
         return state
 
     async def save(self, vehicle_id: int, state: PipelineState) -> None:
-        """Upsert the active saga state."""
+        """Сохраняет или обновляет состояние активной саги."""
         payload = asdict(state)
         payload["updated_at"] = datetime.now(timezone.utc)
         await self.collection.update_one(
@@ -82,7 +82,7 @@ class SagaStore:
         error: str | None = None,
         compensations: list[str] | None = None,
     ) -> None:
-        """Move active saga to saga_history (do not lose history)."""
+        """Переносит активную сагу в saga_history, историю не удаляет."""
         doc = await self.collection.find_one({"_id": vehicle_id})
         now = datetime.now(timezone.utc)
         if doc is None:
